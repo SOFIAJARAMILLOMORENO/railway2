@@ -5,7 +5,7 @@ from core.database import get_db
 from app.schemas.usuarios import ActualizarUsuario, CrearUsuario, EditarPass, RetornoUsuario
 from app.crud import usuarios as crud_users
 from sqlalchemy.exc import SQLAlchemyError
-    
+
 from typing import List
 
 
@@ -124,3 +124,19 @@ def get_all(db: Session = Depends(get_db)):
         return users
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500,detail=str(e))
+    
+@router.get("/obtener-todos-secure", status_code=status.HTTP_200_OK, response_model=List[RetornoUsuario])
+def get_all_s(
+    db: Session = Depends(get_db),
+    user_token: RetornoUsuario = Depends(get_current_user)
+):
+    try:
+        if user_token.id_rol != 1:
+            raise HTTPException(status_code=401, detail="No tienes permisos para crear usuario")
+        
+        users = crud_users.get_all_user(db)
+        if users is None:
+            raise HTTPException(status_code=404, detail="Usuarios no encontrados")
+        return users
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
